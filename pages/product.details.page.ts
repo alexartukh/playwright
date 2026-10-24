@@ -4,13 +4,13 @@ export class ProductDetailsPage {
     readonly page: Page;
     readonly addToCartButton: Locator;
     readonly cartCounter: Locator;
-    readonly checkoutNavigationBar: Locator;
+    readonly nextPageSelector: Locator;
 
     constructor(page: Page) {
         this.page = page;
         this.addToCartButton = page.locator('button#btn-add-to-cart');
         this.cartCounter = page.locator('span#lblCartCount');
-        this.checkoutNavigationBar = page.locator('aw-wizard-navigation-bar');
+        this.nextPageSelector = page.locator('aw-wizard-navigation-bar');
     }
 
     async addToEmptyCartWithDefaultQuantity() {
@@ -20,7 +20,7 @@ export class ProductDetailsPage {
 
     async goToCartViaHeader() {
         await this.cartCounter.click();
-        await expect(this.checkoutNavigationBar).toBeVisible();
+        await expect(this.nextPageSelector).toBeVisible();
     }
 
 }

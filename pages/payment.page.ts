@@ -9,7 +9,7 @@ export class PaymentPage {
     readonly holder: Locator;
     readonly finishButton: Locator;
     readonly successMessage: Locator;
-    readonly nextPageConfirmationMessage: Locator;
+    readonly nextPageSelector: Locator;
 
     constructor(page: Page) {
         this.page = page;
@@ -21,7 +21,7 @@ export class PaymentPage {
         this.holder = page.locator('input#card_holder_name');
         this.finishButton = page.locator('button[data-test="finish"]'); 
         this.successMessage = page.locator('div[data-test="payment-success-message"]');
-        this.nextPageConfirmationMessage = page.locator('div#order-confirmation');
+        this.nextPageSelector = page.locator('div#order-confirmation');
     }
 
     async useCC(ccNumber:string, expiration:string, cvv:string, holder:string) {
@@ -36,7 +36,7 @@ export class PaymentPage {
 
     async placeOrder() {
         await this.finishButton.click();
-        await expect(this.nextPageConfirmationMessage).toBeVisible();
+        await expect(this.nextPageSelector).toBeVisible();
     }
     
 }

@@ -1,22 +1,13 @@
 import { test, expect } from './fixtures'; // replacement for an initial '@playwright/test'; 
 import { getRandomEmail, makeAttachment } from './utils';
-import { BillingAddressPage } from '../pages/billing.address.page';
-import { PaymentPage } from '../pages/payment.page';
-import { ProductDetailsPage } from '../pages/product.details.page';
-import { HomePage } from '../pages/home.page';
 
 test.describe.configure({ mode: 'default' }); // тесты файла по очереди, в одном воркере
 
-test.beforeEach(async ({ page, lang }) => {
-  const langLocator = page.locator('a[data-test="lang-' + lang + '"]');
-
-  await page.goto('https://practicesoftwaretesting.com/');
-  await page.locator('button#language').click();
-  await expect(langLocator).toBeVisible();
-  await langLocator.click();
+test.beforeEach(async ({ homePage, lang }) => {
+  await homePage.selectLanguage(lang);
 });
 
-test('place order as a registered user', async ({ page }, testInfo) => {
+test('place order as a registered user', async ({ page, homePage, loginPage, productDetailsPage, billingPage, paymentPage }, testInfo) => {
   const email = getRandomEmail();
   const password = 'wordPASS123!';
 
@@ -41,19 +32,14 @@ test('place order as a registered user', async ({ page }, testInfo) => {
   await expect(page.locator('a[data-test="register-link"]')).toBeVisible();
 
   // login page again
-  await page.locator('input#email').fill(email);
-  await page.locator('input#password').fill(password);
-  await page.locator('[data-test="login-submit"]').click();
-  await expect(page.locator('a[routerlink="profile"]')).toBeVisible();
+  await loginPage.login(email, password);
 
   // home
-  const home = new HomePage(page);
-  await home.goHomeAndUseFirstAvailableProduct(); 
+  await homePage.goHomeAndUseFirstAvailableProduct();
 
   // PDP
-  const pdp = new ProductDetailsPage(page);
-  await pdp.addToEmptyCartWithDefaultQuantity();
-  await pdp.goToCartViaHeader();
+  await productDetailsPage.addToEmptyCartWithDefaultQuantity();
+  await productDetailsPage.goToCartViaHeader();
 
   // cart
   await page.locator('button[data-test="proceed-1"]').click();
@@ -64,34 +50,35 @@ test('place order as a registered user', async ({ page }, testInfo) => {
   await expect(page.locator('[data-test="proceed-3"]')).toBeVisible();
 
   // step 3 (billing address)
-  const billingAddressPage = new BillingAddressPage(page);
-  await billingAddressPage.fillAddress('US', '60601', '100');
-  await billingAddressPage.continue();
+  await billingPage.fillAddress('US', '60601', '100');
+  await billingPage.continue();
 
   // step 4 (payment)
-  const paymentPage = new PaymentPage(page);
   await paymentPage.useCC('4111-1111-1111-1111', '12/2027', '123', 'ALEX ARTUKH');
   await paymentPage.placeOrder();
 
   // Thanks for your order! Your invoice number is INV-2026000018.
   const line = await page.locator('div#order-confirmation').innerText();
+
   await makeAttachment(testInfo, 'order', `Res = ${line}`);
 });
 
-test('place order as a guest', async ({ page }, testInfo) => {
+//
+//
+//
+
+test('place order as a guest', async ({ page, homePage, productDetailsPage, billingPage, paymentPage }, testInfo) => {
   const email = getRandomEmail();
 
   // log for UI mode
   await makeAttachment(testInfo, 'init', `login = ${email}`);
 
   // home
-  const home = new HomePage(page);
-  await home.goHomeAndUseFirstAvailableProduct(); 
+  await homePage.goHomeAndUseFirstAvailableProduct();
 
   // PDP
-  const pdp = new ProductDetailsPage(page);
-  await pdp.addToEmptyCartWithDefaultQuantity();
-  await pdp.goToCartViaHeader();
+  await productDetailsPage.addToEmptyCartWithDefaultQuantity();
+  await productDetailsPage.goToCartViaHeader();
 
   // cart
   await page.locator('button[data-test="proceed-1"]').click();
@@ -109,14 +96,12 @@ test('place order as a guest', async ({ page }, testInfo) => {
   await expect(page.locator('button[data-test="proceed-3"]')).toBeVisible();
 
   // step 3 (billing address)
-  const billingAddress = new BillingAddressPage(page);
-  await billingAddress.fillAddress('US', '60601', '100');
-  await billingAddress.continue();
+  await billingPage.fillAddress('US', '60601', '100');
+  await billingPage.continue();
 
   // step 4 (payment)
-  const payment = new PaymentPage(page);
-  await payment.useCC('4111-1111-1111-1111', '12/2027', '123', 'ALEX ARTUKH');
-  await payment.placeOrder();
+  await paymentPage.useCC('4111-1111-1111-1111', '12/2027', '123', 'ALEX ARTUKH');
+  await paymentPage.placeOrder();
 
   // Thanks for your order! Your invoice number is INV-2026000018.
   const line = await page.locator('div#order-confirmation').innerText();
