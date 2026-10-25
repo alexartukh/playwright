@@ -10,10 +10,20 @@ const searchCases = [
     { param: "111111111111", expectedResult: 0 },
 ];
 
+// первая группа параметризированных тестов
 for (const searchCase of searchCases) {
     test(`search for "${searchCase.param}"`, async ({ homePage }) => {
         await homePage.searchFor(searchCase.param);
         // повторяет, пока число не совпадёт или не выйдет время
         await expect(homePage.cards).toHaveCount(searchCase.expectedResult);  
+    });
+}
+
+// вторая группа параметризированных тестов
+for (const searchCase of searchCases) {
+    test(`search for "${searchCase.param}" but everything is OOS`, async ({ homePage }) => {
+        await homePage.searchForSomethingButOOS(searchCase.param);
+        await expect(homePage.cards).toHaveCount(searchCase.expectedResult);
+        await expect(homePage.getOOSProductTiles()).toHaveCount(searchCase.expectedResult);
     });
 }

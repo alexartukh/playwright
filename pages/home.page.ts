@@ -23,7 +23,33 @@ export class HomePage {
         this.nextPageSelector = page.locator('#quantity-input');
     }
 
-    async searchFor(str:string) {
+    async searchFor(str: string) {
+        const lookup = this.page.waitForResponse(
+            (r) => { return r.url().includes('products/search') },
+            { timeout: 5000 },
+        );
+        await this.searchInput.fill(str);
+        await this.searchButton.click();
+        await lookup;
+    }
+
+    async searchForSomethingButOOS(str: string) {
+        // 1. перехват ставим ДО клика; times: 1 — сработает только на один запрос и снимется сам
+        await this.page.route(
+            '**/products/search**',
+            async route => {
+                const response = await route.fetch();                      // настоящий ответ сервера
+                const body = await response.json();
+                body.data.forEach((p: any) => { p.in_stock = false; });
+                const fulfillOptions = {
+                    response: response,
+                    json: body,
+                };
+                await route.fulfill(fulfillOptions);
+            },
+            { times: 1 }
+        );
+
         const lookup = this.page.waitForResponse(
             (r) => { return r.url().includes('products/search') },
             { timeout: 5000 },
@@ -38,6 +64,11 @@ export class HomePage {
         const firstExisting = this.cards.filter({ hasNot: this.oosSection }).first();
         await firstExisting.click();
         await expect(this.nextPageSelector).toBeVisible();
+    }
+
+    // Метод созвращает массив локаторов. Он не асинхронный.
+    getOOSProductTiles() {        
+        return this.cards.filter({ has: this.oosSection });
     }
 
     async selectLanguage(lang: string) {
