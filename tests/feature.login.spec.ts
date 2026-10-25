@@ -13,6 +13,7 @@ test.describe('login as a registered user', { tag: '@smoke' }, () => {
     await makeAttachment(testInfo, 'init', `login = ${email}, password = ${password}`);
 
     await loginPage.login(email, password);
+    await expect(loginPage.getMyAccountProfileElement()).toBeVisible();
   });
 
   // подключение loggedInUser обеспечивает то, что My Account будет открыт для залогиненого юзера
