@@ -26,4 +26,8 @@ export class LoginPage {
         await this.loginButton.click();
         await expect(this.nextPageElement).toBeVisible();
     }
+
+    getMyAccountProfileElement() {
+        return this.nextPageElement;
+    }
 }

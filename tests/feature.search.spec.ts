@@ -8,14 +8,14 @@ test.describe('search from a home page', { tag: '@smoke' }, () => {
 
     // параметры для групп тестов
     const searchCases = [
-        { param: "Combination Pliers", expectedResult: 1 },
-        { param: "Pliers", expectedResult: 4 },
-        { param: "111111111111", expectedResult: 0 },
+        { param: 'Combination Pliers', expectedResult: 1 },
+        { param: 'Pliers', expectedResult: 4 },
+        { param: '111111111111', expectedResult: 0 },
     ];
 
     // первая группа параметризированных тестов
     for (const searchCase of searchCases) {
-        test.skip(`search for "${searchCase.param}"`, async ({ homePage }) => {
+        test(`search for "${searchCase.param}"`, async ({ homePage }) => {
             await homePage.searchFor(searchCase.param);
             // повторяет, пока число не совпадёт или не выйдет время
             await expect(homePage.cards).toHaveCount(searchCase.expectedResult);

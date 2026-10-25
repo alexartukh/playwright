@@ -37,7 +37,7 @@ export class HomePage {
         // 1. перехват ставим ДО клика; times: 1 — сработает только на один запрос и снимется сам
         await this.page.route(
             '**/products/search**',
-            async route => {
+            async (route) => {
                 const response = await route.fetch();                      // настоящий ответ сервера
                 const body = await response.json();
                 body.data.forEach((p: any) => { p.in_stock = false; });
@@ -66,7 +66,7 @@ export class HomePage {
         await expect(this.nextPageSelector).toBeVisible();
     }
 
-    // Метод созвращает массив локаторов. Он не асинхронный.
+    // Возвращает локатор. Не асинхронный.
     getOOSProductTiles() {        
         return this.cards.filter({ has: this.oosSection });
     }

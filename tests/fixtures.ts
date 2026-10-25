@@ -1,4 +1,4 @@
-import { test as base, expect } from '@playwright/test';
+import { test as base, expect, Page } from '@playwright/test';
 import { HomePage } from '../pages/home.page';
 import { LoginPage } from '../pages/login.page';
 import { ProductDetailsPage } from '../pages/product.details.page';
@@ -24,6 +24,7 @@ interface MyFixtures {
     paymentPage: PaymentPage;
 
     registeredUser: User;
+    loggedInUser: User;
 }
 
 // новый test = старый 
@@ -33,7 +34,8 @@ interface MyFixtures {
 //  + инструкции по созданию объекта страницы pdp
 //  + инструкции по созданию объекта страницы billing
 //  + инструкции по созданию объекта страницы payment
-//  + создание новго юзера прямо через API 
+//  + создание нового юзера прямо через API
+//  + создание нового юзера прямо через API и логин им же через манипуляцию с localStorage
 
 // extend - функция с 1 параметром, но перед ее вызовом нужно указать его тип данных
 export const test = base.extend<MyFixtures>({
@@ -57,10 +59,10 @@ export const test = base.extend<MyFixtures>({
         await use(new PaymentPage(page));
     },
 
-    // юзер зарегистрированный серез API, а не через веб интерфейс
+    // юзер зарегистрированный через API, а не через веб интерфейс
     registeredUser: async ({ request }, use) => { // request — встроенный HTTP-клиент, браузер не нужен
         // тест получит этот объект, если регистрация пройдет успешно
-        const user: User = { email: getRandomEmail(), password: 'wordPASS123!' }; 
+        const user: User = { email: getRandomEmail(), password: 'wordPASS123!' };
         const response = await request.post('https://api.practicesoftwaretesting.com/users/register', {
             data: { // data → JSON-тело, Content-Type ставится сам
                 first_name: 'Alex',
@@ -73,8 +75,28 @@ export const test = base.extend<MyFixtures>({
             },
         });
         expect(response.status(), await response.text()).toBe(201);  // не 201 → тест падает, в сообщении ответ сервера
-        await use(user); 
+        await use(user);
+    },
+
+    // юзер зарегистрированный + вошедший через API, а не через веб интерфейс
+    // использует предыдущую фикстуру для регистрации
+    loggedInUser: async ({ page, request, registeredUser }, use) => {
+        const loginOptions = {
+            data: { email: registeredUser.email, password: registeredUser.password },
+        };
+        const response = await request.post('https://api.practicesoftwaretesting.com/users/login', loginOptions);
+        expect(response.status(), await response.text()).toBe(200);
+        const responseBody = await response.json();
+        const accessToken: string = responseBody.access_token;
+
+        await page.addInitScript((token: string) => {
+            if (window.location.hostname === 'practicesoftwaretesting.com') { // только на нашем сайте
+                window.localStorage.setItem('auth-token', token);
+            }
+        }, accessToken); // второй аргумент передаётся в функцию как token
+
+        await use(registeredUser);
     },
 });
- 
+
 export { expect } from '@playwright/test';

@@ -6,12 +6,18 @@ test.describe('login as a registered user', { tag: '@smoke' }, () => {
     await homePage.selectLanguage(lang);
   });
 
-  test('login like API user', async ({ registeredUser, loginPage }, testInfo) => {
+  test('registration via API and login manually', async ({ registeredUser, loginPage }, testInfo) => {
     const email = registeredUser.email;
     const password = registeredUser.password;
 
     await makeAttachment(testInfo, 'init', `login = ${email}, password = ${password}`);
 
     await loginPage.login(email, password);
+  });
+
+  // подключение loggedInUser обеспечивает то, что My Account будет открыт для залогиненого юзера
+  test('registration and login via API', async ({ page, loggedInUser, loginPage }) => {
+    await page.goto('https://practicesoftwaretesting.com/account');
+    await expect(loginPage.getMyAccountProfileElement()).toBeVisible();
   });
 });
