@@ -18,9 +18,9 @@ export class BillingAddressPage {
     }
 
     async fillAddress(country: string, postcode: string, house: string) {
-        const lookup = this.page.waitForResponse(r =>
-            r.url().includes('/postcode-lookup') &&
-            r.url().includes(`postcode=${postcode}`)
+        const lookup = this.page.waitForResponse(
+            (r) => { return r.url().includes('/postcode-lookup') && r.url().includes(`postcode=${postcode}`) },
+            { timeout: 10000 }, // bigger timeout for a lookup service
         );
 
         await this.country.selectOption(country);
