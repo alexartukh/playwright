@@ -18,6 +18,11 @@ export class ProductDetailsPage {
         await expect(this.cartCounter).toHaveText('1');
     }
 
+    async addToNonEmptyCartWithDefaultQuantity(expectedAmount:string) {
+        await this.addToCartButton.click();
+        await expect(this.cartCounter).toHaveText(expectedAmount);
+    }
+
     async goToCartViaHeader() {
         await this.cartCounter.click();
         await expect(this.nextPageSelector).toBeVisible();
