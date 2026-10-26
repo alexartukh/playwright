@@ -16,12 +16,15 @@ npx playwright test                         # all tests, all projects (EN + DE)
 npx playwright test --ui                    # UI mode: run, watch, debug
 npx playwright test --project=EN            # one language only
 npx playwright test --grep @smoke           # only tests tagged @smoke
+npx playwright test --grep @screentest      # only visual (screenshot) tests
 npx playwright test --repeat-each=10        # hunt for flaky tests
 npx playwright test --trace=on              # record traces for every test
 npx playwright show-report                  # open the HTML report (needed to view traces)
+npm run lint                                # ESLint with type-aware rules
 ```
 
-Tests also run automatically on every push via GitHub Actions (`.github/workflows/playwright.yml`).
+Tests also run automatically on every push via GitHub Actions (`.github/workflows/playwright.yml`):
+lint first, then all tests except the visual ones (`--grep-invert @screentest`).
 
 ## Project structure
 
@@ -38,6 +41,8 @@ tests/
   feature.search.spec.ts      parameterized search tests, mocked "out of stock"
   feature.login.spec.ts       login via form and via API
   feature.place.order.spec.ts full order: registered user and guest
+  feature.screenshot.tests.spec.ts                visual check of stacked toast notifications
+  feature.screenshot.tests.spec.ts-snapshots/     baseline images (per project and OS)
 playwright.config.ts          projects, workers, retries, reporter
 ```
 
@@ -55,6 +60,10 @@ playwright.config.ts          projects, workers, retries, reporter
 - Every page-object step ends by waiting for an element of the **next** screen,
   to avoid the "old page" trap (a check passing instantly on the page we are leaving).
 - `expect(...).toPass()` for retrying a whole block of code.
+- Visual comparison with `toHaveScreenshot`: two stacked toast notifications are compared with a baseline image.
+  Each toast has an animated progress bar, so a pixel-perfect match is impossible — the check uses a tolerance
+  (`maxDiffPixelRatio`). Clicks are deliberately spaced in time so the toasts also disappear one by one.
+  Baselines exist only for Windows (`-win32`), so the visual tests are excluded from the Linux CI via the `@screentest` tag.
 
 ### Network
 - `page.waitForResponse` — wait for a specific API response; the wait is started **before** the action that triggers the request.
@@ -78,7 +87,7 @@ playwright.config.ts          projects, workers, retries, reporter
 - Projects `EN` and `DE`: the same tests run in two shop languages.
 - Parameterized tests: a `for...of` loop over test data, unique test titles.
 - `test.describe` groups, `test.beforeEach` hooks, `test.describe.configure({ mode: 'default' })`.
-- Tags (`@smoke`) and filtering with `--grep` / `--grep-invert`.
+- Tags (`@smoke`, `@screentest`) and filtering with `--grep` / `--grep-invert`.
 - Unique test data per run (`Date.now()` in e-mail addresses) — tests do not depend on each other.
 
 ### Debugging and reporting
@@ -91,6 +100,13 @@ playwright.config.ts          projects, workers, retries, reporter
 - `workers: 1` — tests run one by one (the public server does not handle parallel orders well).
 - `retries: 2` — protection against occasional server errors.
 - GitHub Actions CI with the HTML report uploaded as a build artifact.
+
+### Code quality
+- ESLint with `typescript-eslint` and `eslint-plugin-playwright`, run locally and as the first CI step.
+- `@typescript-eslint/no-floating-promises` — catches a missing `await` (the most common Playwright mistake).
+- `@typescript-eslint/await-thenable` — catches `await` on something that is not a promise.
+- `playwright/expect-expect` — catches a test without any assertion.
+- `tsconfig.json` used only for type checking (`noEmit`); Playwright compiles the tests itself.
 
 ## Things found about the shop
 

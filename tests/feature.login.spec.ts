@@ -2,23 +2,23 @@ import { test, expect } from './fixtures'; // replacement for an initial '@playw
 import { makeAttachment } from './utils';
 
 test.describe('login as a registered user', { tag: '@smoke' }, () => {
-  test.beforeEach(async ({ homePage, lang }) => {
-    await homePage.selectLanguage(lang);
-  });
+    test.beforeEach(async ({ homePage, lang }) => {
+        await homePage.selectLanguage(lang);
+    });
 
-  test('registration via API and login manually', async ({ registeredUser, loginPage }, testInfo) => {
-    const email = registeredUser.email;
-    const password = registeredUser.password;
+    test('registration via API and login manually', async ({ registeredUser, loginPage }, testInfo) => {
+        const email = registeredUser.email;
+        const password = registeredUser.password;
 
-    await makeAttachment(testInfo, 'init', `login = ${email}, password = ${password}`);
+        await makeAttachment(testInfo, 'init', `login = ${email}, password = ${password}`);
 
-    await loginPage.login(email, password);
-    await expect(loginPage.getMyAccountProfileElement()).toBeVisible();
-  });
+        await loginPage.login(email, password);
+        await expect(loginPage.getMyAccountProfileElement()).toBeVisible();
+    });
 
-  // подключение loggedInUser обеспечивает то, что My Account будет открыт для залогиненого юзера
-  test('registration and login via API', async ({ page, loggedInUser, loginPage }) => {
-    await page.goto('https://practicesoftwaretesting.com/account');
-    await expect(loginPage.getMyAccountProfileElement()).toBeVisible();
-  });
+    // подключение loggedInUser обеспечивает то, что My Account будет открыт для залогиненого юзера
+    test('registration and login via API', async ({ page, loggedInUser, loginPage }) => {
+        await page.goto('https://practicesoftwaretesting.com/account');
+        await expect(loginPage.getMyAccountProfileElement()).toBeVisible();
+    });
 });
