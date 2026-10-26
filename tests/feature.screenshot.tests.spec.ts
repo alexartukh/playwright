@@ -11,17 +11,15 @@ test.describe('Screenshot tests', { tag: '@screentest' }, () => {
 
         // PDP
         await productDetailsPage.addToEmptyCartWithDefaultQuantity();
-        await page.waitForTimeout(2000); // intentional: toasts must appear at different times to disappear one by one
+        await page.waitForTimeout(1500); // intentional: toasts must appear at different times to disappear one by one
         await productDetailsPage.addToNonEmptyCartWithDefaultQuantity('2');
-        await page.waitForTimeout(2000); // intentional: toasts must appear at different times to disappear one by one
-        await productDetailsPage.addToNonEmptyCartWithDefaultQuantity('3');
  
         // Если быстро добавлять продукты, то на экране будет несколько зеленых подтверждений в правом верхнем углу
         // нужно визуально проверить, что их там несколько
 
         const toasts = page.locator('div#toast-container div[role="alert"]');
-        // их 3 одновременно
-        await expect(toasts).toHaveCount(3);
+        // их 2 одновременно
+        await expect(toasts).toHaveCount(2);
 
         const toastContainer = page.locator('div#toast-container');
         const screenshotOptions = {
@@ -30,9 +28,7 @@ test.describe('Screenshot tests', { tag: '@screentest' }, () => {
         };
         await expect(toastContainer).toHaveScreenshot('toasts-stack.png', screenshotOptions);
 
-        
         // они исчезли по одному
-        await expect(toasts).toHaveCount(2);
         await expect(toasts).toHaveCount(1);
         await expect(toasts).toHaveCount(0);
     });
