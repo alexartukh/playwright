@@ -5,31 +5,27 @@ test.describe('aria tests', { tag: '@smoke' }, () => {
         await homePage.selectLanguage(lang); 
     });
 
-    function getARIALinesWithText(tree:string):string[] {
-        const controlLines = tree.split('\n').flatMap((line) => {
-            const matchRes = line.match(/"(.*)"/);
-            if (matchRes) {
-                return matchRes[1];
-            }
-            else {
-                return [];
-            }
-        });
-        return controlLines;
+function getUiLabels(tree: string): string[] {
+    const uiRoles = ['heading', 'slider', 'combobox', 'button', 'textbox', 'option'];   // интерфейс, не данные каталога
+    const labels: string[] = [];
+    for (const line of tree.split('\n')) {
+        const matchRes = line.match(/^\s*- (\w+) "(.*)"/); // роль и имя в кавычках
+        if (matchRes && uiRoles.includes(matchRes[1])) {
+            labels.push(matchRes[2]);
+        }
     }
+    return labels;
+}
 
     test("Human readable labels for a homepage's filter", async ({ page }) => {
 
         const tree = await page.locator('div#filters').ariaSnapshot();   
-        const lines = getARIALinesWithText(tree);
+        const lines = getUiLabels(tree);
 
         const knownIssues = [
             'ngx-slider',
             'ngx-slider-max',
             'sort',
-            // it looks like data created by other users of the public demo site (may disappear after a database reset)
-            'ss2',
-            'used shoelaces',
         ];
 
         const issues:string[] = [];
