@@ -12,9 +12,9 @@ search, login, and placing an order as a registered user and as a guest.
 ```bash
 npm install
 
-npx playwright test                         # all tests, all projects (EN + DE)
+npx playwright test                         # all tests, all projects (2 browsers x 2 languages)
 npx playwright test --ui                    # UI mode: run, watch, debug
-npx playwright test --project=EN            # one language only
+npx playwright test --project=Chrome-EN     # one browser and one language
 npx playwright test --grep @smoke           # only tests tagged @smoke
 npx playwright test --grep @screentest      # only visual (screenshot) tests
 npx playwright test --repeat-each=10        # hunt for flaky tests
@@ -29,21 +29,22 @@ lint first, then all tests except the visual ones (`--grep-invert @screentest`).
 ## Project structure
 
 ```
-pages/                        Page objects (one class per screen)
-  home.page.ts                  language switch, search, product tiles
-  login.page.ts                 login form
-  product.details.page.ts       add to cart, go to cart
-  billing.address.page.ts       billing address step (with postcode autofill)
-  payment.page.ts               payment step, order confirmation
+pages/                                         Page objects (one class per screen)
+  home.page.ts                                 language switch, search, product tiles
+  login.page.ts                                login form
+  product.details.page.ts                      add to cart, go to cart
+  billing.address.page.ts                      billing address step (with postcode autofill)
+  payment.page.ts                              payment step, order confirmation
 tests/
-  fixtures.ts                 custom fixtures (extended `test`)
-  utils.ts                    helpers: unique e-mail, text attachments
-  feature.search.spec.ts      parameterized search tests, mocked "out of stock"
-  feature.login.spec.ts       login via form and via API
-  feature.place.order.spec.ts full order: registered user and guest
-  feature.screenshot.tests.spec.ts                visual check of stacked toast notifications
-  feature.screenshot.tests.spec.ts-snapshots/     baseline images (per project and OS)
-playwright.config.ts          projects, workers, retries, reporter
+  fixtures.ts                                  custom fixtures (extended `test`)
+  utils.ts                                     helpers: unique e-mail, text attachments
+  feature.search.spec.ts                       parameterized search tests, mocked "out of stock"
+  feature.login.spec.ts                        login via form and via API
+  feature.place.order.spec.ts                  full order: registered user and guest
+  feature.aria.spec.ts                         accessibility tree check of the filter panel
+  feature.screenshot.tests.spec.ts             visual check of stacked toast notifications
+  feature.screenshot.tests.spec.ts-snapshots/  baseline images (per project and OS)
+playwright.config.ts                           projects, workers, retries, reporter
 ```
 
 ## Playwright features used
@@ -63,7 +64,11 @@ playwright.config.ts          projects, workers, retries, reporter
 - Visual comparison with `toHaveScreenshot`: two stacked toast notifications are compared with a baseline image.
   Each toast has an animated progress bar, so a pixel-perfect match is impossible — the check uses a tolerance
   (`maxDiffPixelRatio`). Clicks are deliberately spaced in time so the toasts also disappear one by one.
-  Baselines exist only for Windows (`-win32`), so the visual tests are excluded from the Linux CI via the `@screentest` tag.
+  Baselines exist only for Chrome on Windows (`-Chrome-EN-win32`, `-Chrome-DE-win32`), so the visual tests
+  are excluded from the Linux CI via the `@screentest` tag.
+- Accessibility tree check with `locator.ariaSnapshot()`: every label in the filter panel must look human-readable
+  (a simple rule — text meant for a person contains capital letters). Known defects are kept in an explicit list,
+  so the test passes today and fails as soon as a **new** technical label appears.
 
 ### Network
 - `page.waitForResponse` — wait for a specific API response; the wait is started **before** the action that triggers the request.
@@ -84,7 +89,8 @@ playwright.config.ts          projects, workers, retries, reporter
 
 ### Organizing tests
 - Page Object Model: locators as `readonly` fields, user actions as methods, `page` passed once in the constructor.
-- Projects `EN` and `DE`: the same tests run in two shop languages.
+- Four projects — two browser engines x two shop languages: `Chrome-EN`, `Chrome-DE`, `Firefox-EN`, `Firefox-DE`.
+  Chrome (Blink) runs as the installed Google Chrome (`channel: 'chrome'`), Firefox (Gecko) as Playwright's own build.
 - Parameterized tests: a `for...of` loop over test data, unique test titles.
 - `test.describe` groups, `test.beforeEach` hooks, `test.describe.configure({ mode: 'default' })`.
 - Tags (`@smoke`, `@screentest`) and filtering with `--grep` / `--grep-invert`.
@@ -93,13 +99,14 @@ playwright.config.ts          projects, workers, retries, reporter
 ### Debugging and reporting
 - UI mode, Trace Viewer (actions, DOM snapshots, network, console), HTML report.
 - `testInfo.attach` — test data (e-mail, order number) attached to the report.
-- `--repeat-each` to reproduce flaky tests; `trace: 'retain-on-failure'` to keep traces of failed attempts.
+- `--repeat-each` to reproduce flaky tests, together with `--trace=retain-on-failure` to keep traces of the failed attempts.
 - `retries` — a test that passes on retry is reported as **flaky**, not as passed.
 
 ### Configuration
 - `workers: 1` — tests run one by one (the public server does not handle parallel orders well).
 - `retries: 2` — protection against occasional server errors.
-- GitHub Actions CI with the HTML report uploaded as a build artifact.
+- GitHub Actions CI with the HTML report uploaded as a build artifact; only Chrome and Firefox are installed,
+  and the browser installation step has its own 10-minute timeout.
 
 ### Code quality
 - ESLint with `typescript-eslint` and `eslint-plugin-playwright`, run locally and as the first CI step.
@@ -122,3 +129,14 @@ Real behaviour discovered with traces while writing the tests:
   so the tests create a fresh user every time.
 - **Parallel orders fail.** Two orders at the same time from the same machine often fail, hence `workers: 1`.
 - **Slow payment check.** `POST /payment/check` sometimes takes several seconds, so that step has a longer timeout.
+
+### Accessibility and localization
+
+Found by comparing the accessibility trees (`ariaSnapshot()`) of the English and German versions:
+
+- **Untranslated categories.** In the German shop the product categories stay in English (`Hand Tools`, `Hammer`, `Wrench`, ...).
+- **Technical names instead of labels.** The price sliders are announced as `ngx-slider` / `ngx-slider-max`
+  (the name of the UI component), the sort drop-down as `sort`, and its first option has no text at all.
+- **Bare numbers on the price scale.** A screen reader reads the slider scale as `0 200 1 100` —
+  numbers without units or meaning.
+- **Icon-only button.** The button that clears the search is labelled just `X`; a screen reader user hears the letter, not the action.

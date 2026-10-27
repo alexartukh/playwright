@@ -42,8 +42,11 @@ export default defineConfig({
 
   /* Configure projects for major browsers */
   projects: [
-    { name: 'EN', use: { ...devices['Desktop Chrome'], channel: 'chrome', lang: 'en' } },
-    { name: 'DE', use: { ...devices['Desktop Chrome'], channel: 'chrome', lang: 'de' } },
+    { name: 'Chrome-EN', use: { ...devices['Desktop Chrome'], channel: 'chrome', lang: 'en' } },
+    { name: 'Chrome-DE', use: { ...devices['Desktop Chrome'], channel: 'chrome', lang: 'de' } },
+
+    { name: 'Firefox-EN', use: { ...devices['Desktop Firefox'], lang: 'en' } },
+    { name: 'Firefox-DE', use: { ...devices['Desktop Firefox'], lang: 'de' } },
     // {
     //   name: 'chromium',
     //   use: { ...devices['Desktop Chrome'] },
