@@ -1,6 +1,7 @@
 import { test, expect } from './fixtures'; // replacement for an initial '@playwright/test'; 
+import { TAGS } from './tags';
 
-test.describe('search from a home page', { tag: '@smoke' }, () => {
+test.describe('search from a home page', { tag: TAGS.smoke }, () => {
     
     test.beforeEach(async ({ homePage, lang }) => {
         await homePage.selectLanguage(lang);

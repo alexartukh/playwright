@@ -1,8 +1,9 @@
 import { test, expect } from './fixtures'; // replacement for an initial '@playwright/test'; 
 import AxeBuilder from '@axe-core/playwright';
 import { makeAttachment } from './utils';
+import { TAGS } from './tags';
 
-test.describe('aria tests', { tag: '@smoke' }, () => {
+test.describe('aria tests', { tag: TAGS.a11y }, () => {
     test.beforeEach(async ({ homePage, lang }) => {
         await homePage.selectLanguage(lang);
     });
