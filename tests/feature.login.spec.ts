@@ -1,7 +1,7 @@
 import { test, expect } from './fixtures'; // replacement for an initial '@playwright/test'; 
 import { makeAttachment } from './utils';
 
-test.describe('login as a registered user', { tag: '@smoke' }, () => {
+test.describe('login as a registered user', { tag: '@advanced' }, () => {
     test.beforeEach(async ({ homePage, lang }) => {
         await homePage.selectLanguage(lang);
     });

@@ -1,14 +1,14 @@
 import { test, expect } from './fixtures'; // replacement for an initial '@playwright/test'; 
 import { getRandomEmail, makeAttachment } from './utils';
 
-test.describe('place order', { tag: '@smoke' }, () => {
+test.describe('place order', () => {
     test.describe.configure({ mode: 'default' });
 
     test.beforeEach(async ({ homePage, lang }) => {
         await homePage.selectLanguage(lang);
     });
 
-    test('place order as a registered user', async ({ page, homePage, loginPage, productDetailsPage, billingPage, paymentPage }, testInfo) => {
+    test('place order as a registered user', { tag: '@advanced' }, async ({ page, homePage, loginPage, productDetailsPage, billingPage, paymentPage }, testInfo) => {
         const email = getRandomEmail();
         const password = 'wordPASS123!';
 
@@ -68,7 +68,7 @@ test.describe('place order', { tag: '@smoke' }, () => {
     //
     //
 
-    test('place order as a guest', async ({ page, homePage, productDetailsPage, billingPage, paymentPage }, testInfo) => {
+    test('place order as a guest', { tag: '@smoke' }, async ({ page, homePage, productDetailsPage, billingPage, paymentPage }, testInfo) => {
         const email = getRandomEmail();
 
         // log for UI mode

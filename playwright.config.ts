@@ -31,6 +31,9 @@ export default defineConfig({
     /* Collect trace when retrying the failed test. See https://playwright.dev/docs/trace-viewer */
     trace: 'on-first-retry',
 
+    /* Take a screenshot when a test fails; it is attached to the HTML report (also in the CI artifact) */
+    screenshot: 'only-on-failure',
+
     ignoreHTTPSErrors: true,
     launchOptions: {
       args: [

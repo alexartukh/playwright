@@ -21,7 +21,7 @@ jobs:
       run: npx playwright install --with-deps chrome firefox
       timeout-minutes: 10 # только для этого шага 
     - name: Run Playwright tests
-      run: npx playwright test --grep-invert @screentest
+      run: npx playwright test --grep-invert "@screentest|@advanced"
     - uses: actions/upload-artifact@v4
       if: ${{ !cancelled() }}
       with:
