@@ -41,7 +41,7 @@ tests/
   feature.search.spec.ts                       parameterized search tests, mocked "out of stock"
   feature.login.spec.ts                        login via form and via API
   feature.place.order.spec.ts                  full order: registered user and guest
-  feature.aria.spec.ts                         accessibility tree check of the filter panel
+  feature.aria.spec.ts                         accessibility checks: UI labels + axe-core (WCAG)
   feature.screenshot.tests.spec.ts             visual check of stacked toast notifications
   feature.screenshot.tests.spec.ts-snapshots/  baseline images (per project and OS)
 playwright.config.ts                           projects, workers, retries, reporter
@@ -66,9 +66,16 @@ playwright.config.ts                           projects, workers, retries, repor
   (`maxDiffPixelRatio`). Clicks are deliberately spaced in time so the toasts also disappear one by one.
   Baselines exist only for Chrome on Windows (`-Chrome-EN-win32`, `-Chrome-DE-win32`), so the visual tests
   are excluded from the Linux CI via the `@screentest` tag.
-- Accessibility tree check with `locator.ariaSnapshot()`: every label in the filter panel must look human-readable
-  (a simple rule — text meant for a person contains capital letters). Known defects are kept in an explicit list,
-  so the test passes today and fails as soon as a **new** technical label appears.
+- Accessibility tree check with `locator.ariaSnapshot()`: every **UI label** in the filter panel (headings, buttons,
+  sliders, sort options) must look human-readable — a simple rule: text meant for a person contains capital letters.
+  Catalog data (brand and category names) is excluded, because other users of the public demo site keep creating
+  test brands like `tf-brand-1793100787096`. Known defects are kept in an explicit list, so the test passes today
+  and fails as soon as a **new** technical label appears.
+- Automated WCAG check with [axe-core](https://github.com/dequelabs/axe-core) (`@axe-core/playwright`):
+  the filter panel is analysed against WCAG 2 A/AA rules; known violations are listed by rule id,
+  any new violation fails the test and its full details are attached to the report.
+  The two checks complement each other: axe finds broken markup, but it cannot tell that a label such as
+  `ngx-slider` is meaningless — the label check does.
 
 ### Network
 - `page.waitForResponse` — wait for a specific API response; the wait is started **before** the action that triggers the request.
@@ -132,7 +139,7 @@ Real behaviour discovered with traces while writing the tests:
 
 ### Accessibility and localization
 
-Found by comparing the accessibility trees (`ariaSnapshot()`) of the English and German versions:
+Found by comparing the accessibility trees (`ariaSnapshot()`) of the English and German versions and by axe-core:
 
 - **Untranslated categories.** In the German shop the product categories stay in English (`Hand Tools`, `Hammer`, `Wrench`, ...).
 - **Technical names instead of labels.** The price sliders are announced as `ngx-slider` / `ngx-slider-max`
@@ -140,3 +147,5 @@ Found by comparing the accessibility trees (`ariaSnapshot()`) of the English and
 - **Bare numbers on the price scale.** A screen reader reads the slider scale as `0 200 1 100` —
   numbers without units or meaning.
 - **Icon-only button.** The button that clears the search is labelled just `X`; a screen reader user hears the letter, not the action.
+- **Broken list structure** (axe rule `list`, impact *serious*). The category sub-lists are `<ul>` elements that
+  contain a `<fieldset>` directly instead of `<li>` items, so a screen reader cannot announce the list properly.
