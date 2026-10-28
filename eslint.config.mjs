@@ -25,5 +25,11 @@ export default [
     {
         ...playwright.configs['flat/recommended'],                    // готовый набор правил Playwright
         files: ['tests/**/*.ts'],                                     // только для тестов
+        rules: {
+            ...playwright.configs['flat/recommended'].rules,          // сохранить все правила набора
+            // Tags come from constants in tests/tags.ts; this rule can only check string literals,
+            // and TypeScript already rejects unknown tags (TAGS.smok will not compile).
+            'playwright/valid-test-tags': 'off',
+        },
     },
 ];
