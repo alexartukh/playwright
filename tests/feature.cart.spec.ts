@@ -1,17 +1,11 @@
 import { test, expect } from './fixtures'; // replacement for an initial '@playwright/test'; 
-import { makeAttachment } from './utils';
+import { makeAttachment, parsePrice } from './utils';
 import { TAGS } from './tags';
 
 test.describe('cart calculations', { tag: TAGS.advanced }, () => {
     test.beforeEach(async ({ homePage, lang }) => {
         await homePage.selectLanguage(lang);
     });
-
-    function parsePrice(text: string): number {
-        const matchRes = text.match(/^\$([\d.]+)$/);
-        expect(matchRes, `cannot parse price "${text}"`).not.toBeNull();
-        return Number(matchRes![1]);
-    }
 
     test('correct cart total', async ({ page, homePage, productDetailsPage }, testInfo) => {
         await homePage.searchFor('Hammer');

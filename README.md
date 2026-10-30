@@ -5,7 +5,8 @@ for the public demo shop [practicesoftwaretesting.com](https://practicesoftwaret
 
 The goal is to learn Playwright, not to cover the shop with tests.
 The tests are built around a small set of real user journeys:
-search, login, and placing an order as a registered user and as a guest.
+search, login, cart calculations, and placing an order as a registered user and as a guest,
+plus accessibility and visual checks.
 
 ## Running
 
@@ -17,6 +18,7 @@ npx playwright test --ui                    # UI mode: run, watch, debug
 npx playwright test --project=Chrome-EN     # one browser and one language
 npx playwright test --grep @smoke           # only tests tagged @smoke
 npx playwright test --grep @screentest      # only visual (screenshot) tests
+npx playwright test --grep @a11y            # only accessibility tests
 npx playwright test --repeat-each=10        # hunt for flaky tests
 npx playwright test --trace=on              # record traces for every test
 npx playwright show-report                  # open the HTML report (needed to view traces)
@@ -24,7 +26,19 @@ npm run lint                                # ESLint with type-aware rules
 ```
 
 Tests also run automatically on every push via GitHub Actions (`.github/workflows/playwright.yml`):
-lint first, then all tests except the visual ones (`--grep-invert @screentest`).
+lint first, then only the small `@smoke` set in one project (`--grep @smoke --project=Chrome-EN`).
+The full suite runs locally — see the tags below for the reasons.
+
+## Tags
+
+Tags are defined once as constants in `tests/tags.ts` (a typo such as `TAGS.smok` does not compile).
+
+| Tag | Meaning | Where it runs |
+|---|---|---|
+| `@smoke` | minimal "the shop is alive" set: search, guest order | CI and locally |
+| `@advanced` | needs a logged-in user or many requests to the shop | locally only — the demo site's Cloudflare bot protection blocks login and account pages for GitHub-hosted runners |
+| `@screentest` | visual comparison with baseline images | locally only — baselines exist only for Chrome on Windows |
+| `@a11y` | accessibility: UI labels and axe-core | locally |
 
 ## Project structure
 
@@ -38,9 +52,11 @@ pages/                                         Page objects (one class per scree
 tests/
   fixtures.ts                                  custom fixtures (extended `test`)
   utils.ts                                     helpers: unique e-mail, text attachments
+  tags.ts                                      tag constants with their meaning
   feature.search.spec.ts                       parameterized search tests, mocked "out of stock"
   feature.login.spec.ts                        login via form and via API
   feature.place.order.spec.ts                  full order: registered user and guest
+  feature.cart.spec.ts                         cart total = sum of the line totals
   feature.aria.spec.ts                         accessibility checks: UI labels + axe-core (WCAG)
   feature.screenshot.tests.spec.ts             visual check of stacked toast notifications
   feature.screenshot.tests.spec.ts-snapshots/  baseline images (per project and OS)
@@ -65,7 +81,10 @@ playwright.config.ts                           projects, workers, retries, repor
   Each toast has an animated progress bar, so a pixel-perfect match is impossible — the check uses a tolerance
   (`maxDiffPixelRatio`). Clicks are deliberately spaced in time so the toasts also disappear one by one.
   Baselines exist only for Chrome on Windows (`-Chrome-EN-win32`, `-Chrome-DE-win32`), so the visual tests
-  are excluded from the Linux CI via the `@screentest` tag.
+  are tagged `@screentest` and do not run in the Linux CI.
+- Cart total check: three products are added, the line totals are summed and compared with the cart total.
+  Prices are parsed strictly (an unparsable price fails the test instead of being silently skipped),
+  and money is compared with `toBeCloseTo(sum, 2)` because of floating-point arithmetic (`0.1 + 0.2 !== 0.3`).
 - Accessibility tree check with `locator.ariaSnapshot()`: every **UI label** in the filter panel (headings, buttons,
   sliders, sort options) must look human-readable — a simple rule: text meant for a person contains capital letters.
   Catalog data (brand and category names) is excluded, because other users of the public demo site keep creating
@@ -100,12 +119,13 @@ playwright.config.ts                           projects, workers, retries, repor
   Chrome (Blink) runs as the installed Google Chrome (`channel: 'chrome'`), Firefox (Gecko) as Playwright's own build.
 - Parameterized tests: a `for...of` loop over test data, unique test titles.
 - `test.describe` groups, `test.beforeEach` hooks, `test.describe.configure({ mode: 'default' })`.
-- Tags (`@smoke`, `@screentest`) and filtering with `--grep` / `--grep-invert`.
+- Tags (`@smoke`, `@advanced`, `@screentest`, `@a11y`) as constants in `tests/tags.ts`, filtering with `--grep` / `--grep-invert`.
 - Unique test data per run (`Date.now()` in e-mail addresses) — tests do not depend on each other.
 
 ### Debugging and reporting
 - UI mode, Trace Viewer (actions, DOM snapshots, network, console), HTML report.
-- `testInfo.attach` — test data (e-mail, order number) attached to the report.
+- `testInfo.attach` — test data (e-mail, order number, cart numbers) attached to the report.
+- `screenshot: 'only-on-failure'` — a screenshot of every failed test in the report and in the CI artifact.
 - `--repeat-each` to reproduce flaky tests, together with `--trace=retain-on-failure` to keep traces of the failed attempts.
 - `retries` — a test that passes on retry is reported as **flaky**, not as passed.
 
@@ -120,6 +140,8 @@ playwright.config.ts                           projects, workers, retries, repor
 - `@typescript-eslint/no-floating-promises` — catches a missing `await` (the most common Playwright mistake).
 - `@typescript-eslint/await-thenable` — catches `await` on something that is not a promise.
 - `playwright/expect-expect` — catches a test without any assertion.
+- `playwright/valid-test-tags` is switched off: it can only check tags written as string literals,
+  while this project takes them from the `TAGS` constants, which TypeScript already checks.
 - `tsconfig.json` used only for type checking (`noEmit`); Playwright compiles the tests itself.
 
 ## Things found about the shop
@@ -136,6 +158,9 @@ Real behaviour discovered with traces while writing the tests:
   so the tests create a fresh user every time.
 - **Parallel orders fail.** Two orders at the same time from the same machine often fail, hence `workers: 1`.
 - **Slow payment check.** `POST /payment/check` sometimes takes several seconds, so that step has a longer timeout.
+- **Bot protection.** Requests from GitHub-hosted runners to the login and account pages get a Cloudflare
+  "Performing security verification" page instead of the shop. These tests are tagged `@advanced` and run locally;
+  CI runs only the small `@smoke` set in one project to keep the traffic low.
 
 ### Accessibility and localization
 

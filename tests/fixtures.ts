@@ -1,4 +1,5 @@
-import { test as base, expect, Page } from '@playwright/test';
+import { test as base } from 'playwright-bdd'; // было: from '@playwright/test'
+import { expect, Page } from '@playwright/test'; // expect и типы по-прежнему из Playwright
 import { HomePage } from '../pages/home.page';
 import { LoginPage } from '../pages/login.page';
 import { ProductDetailsPage } from '../pages/product.details.page';
